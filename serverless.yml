@@ -1,0 +1,68 @@
+org: vivekrekhadia
+app: turf-it
+service: turf-it
+frameworkVersion: "3"
+
+provider:
+  name: aws
+  runtime: nodejs20.x
+  architecture: arm64
+  versionFunctions: false
+  deploymentMethod: direct
+  region: ${self:custom.config.region}
+  memorySize: ${self:custom.config.memorySize}
+  environment:
+    mongoDbUrl: ${self:custom.config.mongoDbUrl}
+  layers:
+    - !Ref NodeModulesLambdaLayer
+
+custom:
+  stage: ${sls:stage}
+  config: ${file(config.json):${self:custom.stage}}
+  jetpack:
+    concurrency: 15
+
+plugins:
+  - serverless-jetpack
+  - serverless-dotenv-plugin
+  - serverless-iam-roles-per-function
+
+package:
+  excludeDevDependencies: true
+  individually: true
+
+layers:
+  NodeModules:
+    path: ./layers
+
+functions:
+  hello:
+    handler: functions/hello.handler
+    events:
+      - http:
+          path: /hello
+          method: get
+          cors: true
+    package:
+      include:
+        - mongodb/mongodbConnect.mjs
+        - functions/hello.mjs
+      exclude:
+        - "**/*"
+    timeout: 120
+
+  createUser:
+    handler: functions/createUser.handler
+    events:
+      - http:
+          path: /createUser
+          method: post
+          cors: true
+    package:
+      include:
+        - mongodb/mongodbConnect.mjs
+        - functions/createUser.mjs
+        - models/*
+      exclude:
+        - "**/*"
+    timeout: 120
