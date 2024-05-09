@@ -1,6 +1,7 @@
 import { mongodbConnect } from "../mongodb/mongodbConnect.mjs";
 import userModel from "../models/userModel.mjs";
 import { z } from "zod";
+import bcrypt from "bcryptjs";
 
 const registerSchema = z.object({
   name: z.string().min(2),
@@ -13,15 +14,16 @@ export const handler = async (event) => {
   console.log(event.body);
   try {
     await mongodbConnect();
-    const { name, email, password, phone } = registerSchema.parse(
+    const { name, email, password, phone } = await registerSchema.parse(
       JSON.parse(event.body)
     );
-    // const hashedPassword = await bcrypt.hash(password, 10);
-    // co;
+
+    const hashedPassword = await bcrypt.hashSync(password, 10);
+    console.log(hashedPassword, "hashedPassword");
     const user = {
       name,
       email,
-      password,
+      password: hashedPassword,
       phone,
     };
 
@@ -37,19 +39,27 @@ export const handler = async (event) => {
       body: JSON.stringify({ message: "User created Successfully", data }),
     };
   } catch (error) {
-    console.log(error);
-    if (error instanceof z.ZodError) {
-      return res
-        .status(400)
-        .json({ message: "Validation error", details: error.errors });
+    if (error.name == "ZodError") {
+      return {
+        statusCode: 400,
+        headers: {
+          "Access-Control-Allow-Origin": "*",
+          "Access-Control-Allow-Credentials": true,
+        },
+        body: JSON.stringify({
+          message: "Validation error",
+          details: error.issues,
+        }),
+      };
+    } else {
+      return {
+        statusCode: 500,
+        headers: {
+          "Access-Control-Allow-Origin": "*",
+          "Access-Control-Allow-Credentials": true,
+        },
+        body: JSON.stringify({ message: "Something went wrong", error }),
+      };
     }
-    return {
-      statusCode: 500,
-      headers: {
-        "Access-Control-Allow-Origin": "*",
-        "Access-Control-Allow-Credentials": true,
-      },
-      body: JSON.stringify({ message: "Something went wrong", error }),
-    };
   }
 };

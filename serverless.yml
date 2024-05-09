@@ -36,20 +36,20 @@ layers:
     path: ./layers
 
 functions:
-  hello:
-    handler: functions/hello.handler
-    events:
-      - http:
-          path: /hello
-          method: get
-          cors: true
-    package:
-      include:
-        - mongodb/mongodbConnect.mjs
-        - functions/hello.mjs
-      exclude:
-        - "**/*"
-    timeout: 120
+  # hello:
+  #   handler: functions/hello.handler
+  #   events:
+  #     - http:
+  #         path: /hello
+  #         method: get
+  #         cors: true
+  #   package:
+  #     include:
+  #       - mongodb/mongodbConnect.mjs
+  #       - functions/hello.mjs
+  #     exclude:
+  #       - "**/*"
+  #   timeout: 120
 
   createUser:
     handler: functions/createUser.handler
@@ -62,6 +62,22 @@ functions:
       include:
         - mongodb/mongodbConnect.mjs
         - functions/createUser.mjs
+        - models/*
+      exclude:
+        - "**/*"
+    timeout: 120
+
+  loginUser:
+    handler: functions/loginUser.handler
+    events:
+      - http:
+          path: /login
+          method: post
+          cors: true
+    package:
+      include:
+        - mongodb/mongodbConnect.mjs
+        - functions/loginUser.mjs
         - models/*
       exclude:
         - "**/*"
